@@ -1,0 +1,4 @@
+module(
+    name = "custom_json_parser",
+    version = "1.0",
+)
