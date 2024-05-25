@@ -22,6 +22,10 @@ struct BufferReader {
 
     std::optional<char> peek() const;
 
+    char throw_next_byte();
+
+    char throw_peek() const;
+
 private:
     void update_buffer();
 

@@ -29,6 +29,18 @@ std::optional<char> BufferReader::peek() const {
     } else return std::nullopt;
 }
 
+char BufferReader::throw_next_byte() {
+    std::optional<char> cur_read = next_byte();
+    if (cur_read.has_value()) [[likely]] return *cur_read;
+    throw std::runtime_error("Invalid next_byte");
+}
+
+char BufferReader::throw_peek() const {
+    std::optional<char> cur_read = peek();
+    if (cur_read.has_value()) [[likely]] return *cur_read;
+    throw std::runtime_error("Invalid peek");
+}
+
 void BufferReader::update_buffer() {
     // check current state of stream
     if (next_byte_status != Status::OKAY) return;

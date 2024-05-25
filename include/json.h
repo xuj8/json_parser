@@ -1,7 +1,7 @@
 #pragma once
 
 #include <variant>
-#include <unordered_map>
+#include <boost/container/map.hpp>
 #include <string>
 #include <vector>
 
@@ -16,31 +16,55 @@ namespace JsonConstants {
     constexpr char ESCAPE = '\\';
     constexpr char DECIMAL_POINT = '.';
     constexpr char MINUS = '-';
+    constexpr char PLUS = '+';
     constexpr char EXPONENT_UNCASED = 'e';
+    constexpr char REVERSE_SLASH = '\\';
+    constexpr char SLASH = '/';
+    constexpr char BACKSPACE = 'b';
+    constexpr char FORMFEED = 'f';
+    constexpr char LINEFEED = 'n';
+    constexpr char RETURN = 'r';
+    constexpr char TAB = 't';
+    constexpr char HEX = 'u';
+    constexpr char COMMA = ',';
 };
+
+struct JsonValue;
 
 // We are deliberately not using shared_ptr. 
 struct JsonValue {
 
-    using Object = std::unordered_map<std::string, JsonValue>;
+    using Object = boost::container::map<std::string, JsonValue>;
     using Array = std::vector<JsonValue>;
 
     enum class Type {
         Null,
-        Boolean,
         Number,
+        Boolean,
         String,
         Object,
         Array
     };
 
+    static constexpr char* TypeNames[] = {
+        "null type",
+        "number type",
+        "boolean type",
+        "string type",
+        "object type",
+        "array type"
+    };
+
+    using var_t = std::variant<std::nullptr_t, double, bool, std::string, Object, Array>;
+
     JsonValue();
 
+    JsonValue(nullptr_t _value);
     JsonValue(bool _value);
+    JsonValue(int _value);
     JsonValue(double _value);
     JsonValue(const std::string& _value);
-    JsonValue(const Object& _value);
-    JsonValue(const Array& _array);
+    JsonValue(const char * _value);
 
     JsonValue(Type _type);
 
@@ -57,23 +81,54 @@ struct JsonValue {
     JsonValue& at(int index);
     const JsonValue& at(int index) const;
 
-    void add_to_object(const std::string& index, JsonValue&& _value);
-    void add_to_array(JsonValue&& _value);
+    bool exists(const std::string& index) const;
+    bool exists(const int index) const;
+
+    void set_index(const std::string& index, const JsonValue& _value);
+    void set_index(const std::string& index, JsonValue&& _value);
+    void set_index(const std::string& index, const Array& _value);
+    void set_index(const std::string& index, Array&& _value);
+    void set_index(const std::string& index, const Object& _value);
+    void set_index(const std::string& index, Object&& _value);
+    void set_index(const int index, const JsonValue& _value);
+    void set_index(const int index, JsonValue&& _value);
+    void set_index(const int index, const Array& _value);
+    void set_index(const int index, Array&& _value);
+    void set_index(const int index, const Object& _value);
+    void set_index(const int index, Object&& _value);
+
+    void push_back(const JsonValue& _value);
+    void push_back(JsonValue&& _value);
+    void push_back(const Array& _value);
+    void push_back(Array&& _value);
+    void push_back(const Object& _value);
+    void push_back(Object&& _value);
 
     void set_value(bool _value);
     void set_value(double _value);
     void set_value(const std::string& _value);
+    void set_value(std::string&& _value);
     void set_value(const Object& _value);
+    void set_value(Object&& _value);
     void set_value(const Array& _value);
+    void set_value(Array&& _value);
+
+    void set_type(Type type);
 
     std::string to_string() const;
 
 private:
+
+    JsonValue(const Object& _value);
+    JsonValue(const Array& _array);
+    JsonValue(Object&& _value);
+    JsonValue(Array&& _value);
+    
     void verify_type(Type expected) const;
     void verify_index(int index) const;
 
-    static std::string object_to_string(const Object& object);
-    static std::string array_to_string(const Array& array);
+    std::string object_to_string() const;
+    std::string array_to_string() const;
 
-    std::variant<std::nullptr_t, bool, double, std::string, Object, Array> value;
+    var_t value;
 };
