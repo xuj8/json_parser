@@ -20,6 +20,8 @@ cc_test(
         "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
         "@bazel_tools//tools/cpp/runfiles",
+        "@com_github_nlohmann_json//:nlohmann_json",
     ],
+    data = ["//data:json_test_data"],
     copts = ["-std=c++20", "-g", "-fno-omit-frame-pointer", "-fno-inline"],
 )

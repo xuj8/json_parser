@@ -3,6 +3,8 @@
 #include "json.h"
 #include "parser.h"
 #include <iostream>
+#include "tools/cpp/runfiles/runfiles.h"
+#include <nlohmann/json.hpp>
 
 // Helper function to parse JSON from a string
 std::optional<JsonValue> parse_json_string(const std::string& json) {
@@ -105,6 +107,100 @@ TEST(JsonParserTest, ParseInvalidJson) {
     std::optional<JsonValue> result = parse_json_string(json);
     EXPECT_FALSE(result.has_value());
 }
+
+std::ifstream open_json_test_file(const std::string& filepath_to_root) {
+    std::string workspace_name = "custom_json_parser"; 
+    auto runfiles = bazel::tools::cpp::runfiles::Runfiles::CreateForTest();
+    std::string runfiles_path = runfiles->Rlocation(workspace_name + "/" + filepath_to_root);
+    auto file = std::ifstream(runfiles_path);
+    if (!file.is_open()) 
+        throw std::runtime_error("Error, file not open");
+    return file;
+}
+
+
+// run tests on the official json test files
+
+TEST(JsonParserTest, ParseOfficialTestCases) {
+    std::string invalid_prefix = "data/tests/official/fail";
+    std::string valid_prefix = "data/tests/official/pass";
+    
+    std::vector<std::string> invalids, valids;
+    
+    for(int i = 1; i <= 33; i++) {
+        std::string filepath = invalid_prefix + std::to_string(i) + ".json";
+        invalids.push_back(filepath);
+    }
+    for(int i = 1; i <= 3; i++) {
+        std::string filepath = valid_prefix + std::to_string(i) + ".json";
+        valids.push_back(filepath);
+    }
+    
+    for (const auto& filepath: valids) {
+        auto file = open_json_test_file(filepath);
+        auto json_opt = parse(file);
+        EXPECT_TRUE(json_opt.has_value()) << "Expected " << filepath << " to parse";
+        
+        // now, parse the same file w/ nlohmann and also using the to_string of the json_opt.
+        nlohmann::json reference;
+        file = open_json_test_file(filepath);
+        file >> reference;
+        
+        nlohmann::json from_parsed = nlohmann::json::parse((json_opt->to_string()));
+        
+        EXPECT_TRUE(reference == from_parsed) << "Expected " << filepath << "'s parsed representation to equal reference";
+    }
+    
+    for(const auto& filepath: invalids) {
+        auto file = open_json_test_file(filepath);
+        auto json_opt = parse(file);
+        EXPECT_TRUE(!json_opt.has_value()) << "Did not expect " << filepath << " to parse";
+    } 
+}
+
+// run tests on Crickett's test cases
+TEST(JsonParserTest, ParseCrickettTestCases) {
+    std::vector<std::string> valids = {"data/tests/step1/valid.json", 
+                                       "data/tests/step2/valid.json",  
+                                       "data/tests/step2/valid2.json",
+                                       "data/tests/step3/valid.json",  
+                                       "data/tests/step4/valid.json",  
+                                       "data/tests/step4/valid2.json"};
+            
+    std::vector<std::string> invalids = {"data/tests/step1/invalid.json",
+                                         "data/tests/step2/invalid.json",
+                                         "data/tests/step2/invalid2.json",
+                                         "data/tests/step3/invalid.json",
+                                         "data/tests/step4/invalid.json"};
+                                         
+    // check valids
+    
+    for (const auto& filepath: valids) {
+        auto file = open_json_test_file(filepath);
+        auto json_opt = parse(file);
+        EXPECT_TRUE(json_opt.has_value());
+        
+        // now, parse the same file w/ nlohmann and also using the to_string of the json_opt.
+        nlohmann::json reference;
+        file = open_json_test_file(filepath);
+        file >> reference;
+        
+        nlohmann::json from_parsed = nlohmann::json::parse((json_opt->to_string()));
+        
+        EXPECT_TRUE(reference == from_parsed);
+    }
+    
+    for(const auto& filepath: invalids) {
+        auto file = open_json_test_file(filepath);
+        auto json_opt = parse(file);
+        EXPECT_TRUE(!json_opt.has_value());
+    }                               
+}
+
+
+
+
+
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

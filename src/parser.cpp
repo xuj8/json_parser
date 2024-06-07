@@ -25,7 +25,10 @@ std::optional<JsonValue> parse(std::istream& input) {
         default:
             return std::nullopt;
     }
-
+    
+    consume_whitespace(reader);
+    if (reader.next_byte().has_value()) 
+        return std::nullopt;
     return result;
 }
 

@@ -1,6 +1,6 @@
 #include "buffer_reader.h"
 
-BufferReader::BufferReader(std::istream& _stream): stream{_stream}, next_pos{std::nullopt}, cur_read_size{0}, next_byte_status{Status::OKAY} {
+BufferReader::BufferReader(std::istream& _stream): next_pos{std::nullopt}, cur_read_size{0}, next_byte_status{Status::OKAY}, stream{_stream} {
     update_buffer();
 };
 
